@@ -1,47 +1,32 @@
 
 package com.poppop.RNReactNativeSharedGroupPreferences;
 
-import android.app.Activity;
-import android.content.Context;
-import android.content.SharedPreferences;
-import java.io.*;
-import android.Manifest;
+import android.content.ContentValues;
 import android.content.pm.PackageManager;
-import android.os.Bundle;
-import android.os.Environment;
-import androidx.core.app.ActivityCompat;
+import android.database.Cursor;
+import android.net.Uri;
+import android.util.Log;
 
+import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.Callback;
-import com.facebook.react.bridge.ReadableMap;
-
-import android.content.ContentProvider;
-import android.content.ContentUris;
-import android.content.ContentValues;
-import android.net.Uri;
-import android.database.Cursor;
-import android.widget.Toast;
 
 
 
 public class RNReactNativeSharedGroupPreferencesModule extends ReactContextBaseJavaModule {
 
   private final ReactApplicationContext reactContext;
+  private final String TAG = "RNSharedGroupPrefs";
 
   public RNReactNativeSharedGroupPreferencesModule(ReactApplicationContext reactContext) {
     super(reactContext);
     this.reactContext = reactContext;
   }
 
-  private SharedPreferences getSharedPreferences(String appGroup) {
-    return reactContext.getApplicationContext().getSharedPreferences(appGroup, Context.MODE_PRIVATE);
-  }
-
   @Override
   public String getName() {
-    return "RNReactNativeSharedGroupPreferences";
+    return "RNReactNativeSharedGroupPreferencesModule";
   }
 
   @ReactMethod
@@ -56,114 +41,51 @@ public class RNReactNativeSharedGroupPreferencesModule extends ReactContextBaseJ
   }
 
   @ReactMethod
-  public void setItem(String key, String value, String appGroup, ReadableMap options, final Callback callback) {
-    boolean useAndroidSharedPreferences = false;
-    if (options.hasKey("useAndroidSharedPreferences")) {
-      useAndroidSharedPreferences = options.getBoolean("useAndroidSharedPreferences");
-    }
+  public void setItem(String key, String value, String appGroup, final Callback callback) {
+    try {
+      String URL = "content://" +  appGroup + ".SharedProvider/data";
+      Uri CONTENT_URI = Uri.parse(URL);
 
-    if (useAndroidSharedPreferences) {
-      SharedPreferences preferences = getSharedPreferences(appGroup);
-      SharedPreferences.Editor editor = preferences.edit();
-      editor.putString(key, value);
-      editor.apply();
-      callback.invoke(null, "");
-    } else {
-      int apiVersion = android.os.Build.VERSION.SDK_INT;
-      /*
-      if (apiVersion >= 30) {
-
-        // kjellhere /////////
-        String URL = "content://" + appGroup + "/data";
-        Uri CONTENT_URI = Uri.parse(URL);
-
-        ContentValues values = new ContentValues();
-        values.put(key, value);
-        Uri uri = getContentResolver().insert(CONTENT_URI, values);
-////////////////////////
+      ContentValues values = new ContentValues();
+      values.put(SharedDatabase.COL_KEY, key);
+      values.put(SharedDatabase.COL_VALUE, value);
+      String selectionClause = SharedDatabase.COL_KEY + " LIKE ?";
+      String[] selectionArgs = {key};
+      Cursor c = reactContext.getContentResolver().query(CONTENT_URI, null, selectionClause, selectionArgs, null);
+      if (c.moveToFirst()) {
+        reactContext.getContentResolver().update(CONTENT_URI, values, selectionClause, selectionArgs);
       } else {
-        */
-        File extStore = Environment.getExternalStorageDirectory();
-        String fileName = "data.json";
-
-        try {
-          File dir = new File(extStore.getAbsolutePath() + "/" + appGroup + "/");
-          dir.mkdir();
-          File myFile = new File(dir, fileName);
-          myFile.createNewFile();
-          FileOutputStream fOut = new FileOutputStream(myFile);
-          OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
-          myOutWriter.append(value);
-          myOutWriter.close();
-          fOut.close();
-          callback.invoke(null, "");
-        } catch (Exception e) {
-          e.printStackTrace();
-          callback.invoke(0, null);
-        }
-        //Toast.makeText(this.reactContext, "HELLO! v" + apiVersion, Toast.LENGTH_LONG).show();
-      //}
+        reactContext.getContentResolver().insert(CONTENT_URI, values);
+      }
+      c.close();
+      callback.invoke(null, "");
+    } catch (Exception e) {
+      callback.invoke(null, "");
+      Log.e(TAG, e.toString());
     }
   }
 
   @ReactMethod
-  public void getItem(String key, String appGroup, ReadableMap options, final Callback callback) {
-    boolean useAndroidSharedPreferences = false;
-    if (options.hasKey("useAndroidSharedPreferences")) {
-      useAndroidSharedPreferences = options.getBoolean("useAndroidSharedPreferences");
-    }
+  public void getItem(String key, String appGroup, final Callback callback) {
+    try {
+      String URL = "content://" + appGroup + ".SharedProvider/data";
 
-    if (useAndroidSharedPreferences) {
-      SharedPreferences preferences = getSharedPreferences(appGroup);
-      String value = preferences.getString(key, null);
-      callback.invoke(null, value);
-    } else {
-      int apiVersion = android.os.Build.VERSION.SDK_INT;
-      /*
-      if (apiVersion >= 30) {
-        // kjellhere/////////
-        String URL = "content://" + appGroup + "/data";
-        Uri CONTENT_URI = Uri.parse(URL);
-        Cursor c = getContentResolver().query(CONTENT_URI, null, null, null, null);
+      Uri CONTENT_URI = Uri.parse(URL);
+      String selectionClause = SharedDatabase.COL_KEY + " LIKE ?";
+      String[] selectionArgs = {key};
+      Cursor c = reactContext.getContentResolver().query(CONTENT_URI, null, selectionClause, selectionArgs, null);
+      String jsonString = "";
 
-        String jsonString = "";
-        int index = c.getColumnIndex(key);
-        while (c.moveToNext()) {
-          jsonString = jsonString + c.getString(index);
-        }
+      int index = c.getColumnIndex(SharedDatabase.COL_VALUE);
+      while (c.moveToNext()) {
+        jsonString = jsonString + c.getString(index);
+      }
 
-        Toast.makeText(this.reactContext, "HELLO!", Toast.LENGTH_LONG).show();
-//////////////
-      } else {
-        */
-        File extStore = Environment.getExternalStorageDirectory();
-        String fileName = "data.json";
-        String path = extStore.getAbsolutePath() + "/" + appGroup + "/" + fileName;
-
-        String s = "";
-        String fileContent = "";
-        try {
-
-           File myFile = new File(path);
-           FileInputStream fIn = new FileInputStream(myFile);
-           BufferedReader myReader = new BufferedReader(
-                   new InputStreamReader(fIn));
-
-           while ((s = myReader.readLine()) != null) {
-               fileContent += s + "";
-           }
-           myReader.close();
-           callback.invoke(null, fileContent);
-        } catch (IOException e) {
-           callback.invoke(0, null);
-        }
-      //}
+      callback.invoke(null, jsonString);
+    }catch (Exception e){
+      callback.invoke(null, "");
+      Log.e(TAG, e.getMessage());
     }
   }
 }
 
-/*
-class RNReactNativeSharedGroupPreferencesProvider extends ContentProvider {
-
-}
-*/
