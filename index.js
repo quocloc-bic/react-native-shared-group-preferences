@@ -15,31 +15,36 @@ export default class SharedGroupPreferences {
     })
   }
 
-  static async getItem(key, appGroup, inputOptions) {
+  static async getItem(key, appGroup) {
     return new Promise((resolve, reject)=>{
       if ((Platform.OS != 'ios') && (Platform.OS != 'android')) {
         reject(Platform.OS)
       }
 
-      const options = inputOptions || {}
-      RNReactNativeSharedGroupPreferences.getItem(key, appGroup, options, (errorCode, item)=>{
+     
+      RNReactNativeSharedGroupPreferences.getItem(key, appGroup, (errorCode, item)=>{
         if (errorCode != null) {
           reject(errorCode)
         } else {
-          resolve(JSON.parse(item))
+          try {
+            const result = JSON.parse(item);
+            resolve(result)
+          }catch(error){
+            reject(error)
+          }
         }
       })
     })
   }
 
-  static async setItem(key, value, appGroup, inputOptions) {
+  static async setItem(key, value, appGroup) {
     return new Promise((resolve, reject)=>{
       if ((Platform.OS != 'ios') && (Platform.OS != 'android')) {
         reject(Platform.OS)
       }
 
-      const options = inputOptions || {}
-      RNReactNativeSharedGroupPreferences.setItem(key, JSON.stringify(value), appGroup, options, errorCode=>{
+      
+      RNReactNativeSharedGroupPreferences.setItem(key, JSON.stringify(value), appGroup, errorCode=>{
         if (errorCode != null) {
           reject(errorCode)
         } else {
