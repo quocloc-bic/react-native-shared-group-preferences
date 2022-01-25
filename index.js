@@ -1,11 +1,11 @@
 import { NativeModules, Platform } from 'react-native'
-const { RNReactNativeSharedGroupPreferences } = NativeModules
+const { RNReactNativeSharedGroupPreferencesModule } = NativeModules
 
 export default class SharedGroupPreferences {
 
   static async isAppInstalledAndroid(packageName) {
     return new Promise((resolve, reject)=>{
-      RNReactNativeSharedGroupPreferences.isAppInstalledAndroid(packageName, installed=>{
+      RNReactNativeSharedGroupPreferencesModule.isAppInstalledAndroid(packageName, installed=>{
         if (installed) {
           resolve()
         } else {
@@ -22,7 +22,7 @@ export default class SharedGroupPreferences {
       }
 
      
-      RNReactNativeSharedGroupPreferences.getItem(key, appGroup, (errorCode, item)=>{
+      RNReactNativeSharedGroupPreferencesModule.getItem(key, appGroup, (errorCode, item)=>{
         if (errorCode != null) {
           reject(errorCode)
         } else {
@@ -44,7 +44,7 @@ export default class SharedGroupPreferences {
       }
 
       
-      RNReactNativeSharedGroupPreferences.setItem(key, JSON.stringify(value), appGroup, errorCode=>{
+      RNReactNativeSharedGroupPreferencesModule.setItem(key, JSON.stringify(value), appGroup, errorCode=>{
         if (errorCode != null) {
           reject(errorCode)
         } else {
