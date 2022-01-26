@@ -12,8 +12,6 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 
-
-
 public class RNReactNativeSharedGroupPreferencesModule extends ReactContextBaseJavaModule {
 
   private final ReactApplicationContext reactContext;
@@ -26,7 +24,7 @@ public class RNReactNativeSharedGroupPreferencesModule extends ReactContextBaseJ
 
   @Override
   public String getName() {
-    return "RNReactNativeSharedGroupPreferencesModule";
+    return "RNReactNativeSharedGroupPreferences";
   }
 
   @ReactMethod
@@ -43,14 +41,14 @@ public class RNReactNativeSharedGroupPreferencesModule extends ReactContextBaseJ
   @ReactMethod
   public void setItem(String key, String value, String appGroup, final Callback callback) {
     try {
-      String URL = "content://" +  appGroup + ".SharedProvider/data";
+      String URL = "content://" + appGroup + ".SharedProvider/data";
       Uri CONTENT_URI = Uri.parse(URL);
 
       ContentValues values = new ContentValues();
       values.put(SharedDatabase.COL_KEY, key);
       values.put(SharedDatabase.COL_VALUE, value);
       String selectionClause = SharedDatabase.COL_KEY + " LIKE ?";
-      String[] selectionArgs = {key};
+      String[] selectionArgs = { key };
       Cursor c = reactContext.getContentResolver().query(CONTENT_URI, null, selectionClause, selectionArgs, null);
       if (c.moveToFirst()) {
         reactContext.getContentResolver().update(CONTENT_URI, values, selectionClause, selectionArgs);
@@ -72,7 +70,7 @@ public class RNReactNativeSharedGroupPreferencesModule extends ReactContextBaseJ
 
       Uri CONTENT_URI = Uri.parse(URL);
       String selectionClause = SharedDatabase.COL_KEY + " LIKE ?";
-      String[] selectionArgs = {key};
+      String[] selectionArgs = { key };
       Cursor c = reactContext.getContentResolver().query(CONTENT_URI, null, selectionClause, selectionArgs, null);
       String jsonString = "";
 
@@ -82,10 +80,9 @@ public class RNReactNativeSharedGroupPreferencesModule extends ReactContextBaseJ
       }
 
       callback.invoke(null, jsonString);
-    }catch (Exception e){
+    } catch (Exception e) {
       callback.invoke(null, "");
       Log.e(TAG, e.getMessage());
     }
   }
 }
-
