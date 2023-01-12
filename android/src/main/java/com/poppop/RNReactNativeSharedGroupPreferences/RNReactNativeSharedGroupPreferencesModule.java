@@ -64,7 +64,7 @@ public class RNReactNativeSharedGroupPreferencesModule extends ReactContextBaseJ
   }
 
   @ReactMethod
-  public void getItem(String key, String appGroup, final Callback callback) {
+  public String getItem(String key, String appGroup, final Callback callback) {
     try {
       String URL = "content://" + appGroup + ".SharedProvider/data";
 
@@ -80,9 +80,12 @@ public class RNReactNativeSharedGroupPreferencesModule extends ReactContextBaseJ
       }
 
       callback.invoke(null, jsonString);
+      return jsonString;
     } catch (Exception e) {
       callback.invoke(null, "");
       Log.e(TAG, e.getMessage());
+      return "";
+
     }
   }
 }
